@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">CreativeEditorDemo</string>
+    <string name="select_images">Select Images</string>
+    <string name="edit_images">Edit Images</string>
+    <string name="select_at_least_one">Please select at least one image</string>
+    <string name="permission_required">Storage permission is required</string>
+    <string name="continue_text">Continue</string>
+    <string name="image_selection">Image Selection</string>
+    <string name="editor">Creative Editor</string>
+</resources>
