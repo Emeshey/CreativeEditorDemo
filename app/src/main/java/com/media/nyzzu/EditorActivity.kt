@@ -73,7 +73,7 @@ class EditorActivity : AppCompatActivity() {
         val firstUri = photosData.first()
 
         withContext(Dispatchers.Main) {
-            engine.scene.load(firstUri)
+            engine.scene.createFromImage(firstUri)
             println("Scene created successfully from first image.")
         }
 
