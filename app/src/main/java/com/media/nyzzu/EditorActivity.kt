@@ -8,19 +8,16 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import ly.img.editor.DesignEditor
 import ly.img.editor.EditorConfiguration
+import ly.img.editor.EditorDefaults
 import ly.img.editor.EngineConfiguration
 import ly.img.editor.core.UnstableEditorApi
-import ly.img.editor.core.library.data.TextAssetSource
-import ly.img.editor.core.library.data.TypefaceProvider
+import ly.img.editor.core.event.EditorEventHandler
 import ly.img.editor.rememberForDesign
 import ly.img.engine.ContentFillMode
-import ly.img.engine.DefaultAssetSource
 import ly.img.engine.DesignBlockType
 import ly.img.engine.Engine
 import ly.img.engine.FillType
 import ly.img.engine.ShapeType
-import ly.img.engine.addDefaultAssetSources
-import ly.img.engine.addDemoAssetSources
 
 class EditorActivity : AppCompatActivity() {
 
@@ -54,7 +51,11 @@ class EditorActivity : AppCompatActivity() {
                 EngineConfiguration.Companion.remember(
                     license = "your_license_key",
                     onCreate = {
-                        setupEditor(this.editorContext.engine, selectedImages.toList())
+                        setupEditor(
+                            this.editorContext.engine,
+                            selectedImages.toList(),
+                            this.editorContext.eventHandler
+                        )
                     },
                 )
             val editorConfiguration = EditorConfiguration.rememberForDesign()
@@ -69,65 +70,57 @@ class EditorActivity : AppCompatActivity() {
 
     }
 
-    private suspend fun setupEditor(engine: Engine, photosData: List<Uri>) {
-        val firstUri = photosData.first()
-
-        withContext(Dispatchers.Main) {
-            engine.scene.createFromImage(firstUri)
-            println("Scene created successfully from first image.")
-        }
+    @OptIn(UnstableEditorApi::class)
+    private suspend fun setupEditor(
+        engine: Engine,
+        photosData: List<Uri>,
+        editorEventHandler: EditorEventHandler
+    ) {
+        EditorDefaults.onCreate(
+            engine = engine,
+            eventHandler = editorEventHandler,
+            sceneUri = EngineConfiguration.defaultDesignSceneUri,
+        )
 
         val pages = engine.scene.getPages()
         val firstPage = pages.first()
 
-        println("Total pages in scene: ${pages.size}")
-
         val parent = engine.block.getParent(firstPage)
 
-        suspend fun addPageWithImage(url: Uri) {
+        suspend fun addPageWithImage(uri: Uri, useFirstPage: Boolean) {
             try {
                 withContext(Dispatchers.Main) {
-                    val newPage = engine.block.create(DesignBlockType.Page)
-                    engine.block.setWidth(newPage, engine.block.getWidth(firstPage))
-                    engine.block.setHeight(newPage, engine.block.getHeight(firstPage))
-                    parent?.let { engine.block.appendChild(it, newPage) }
-
+                    val targetPage = if (useFirstPage) {
+                        firstPage
+                    } else {
+                        val newPage = engine.block.create(DesignBlockType.Page)
+                        engine.block.setWidth(newPage, engine.block.getWidth(firstPage))
+                        engine.block.setHeight(newPage, engine.block.getHeight(firstPage))
+                        parent?.let { engine.block.appendChild(it, newPage) }
+                        newPage
+                    }
                     val graphicBlock = engine.block.create(DesignBlockType.Graphic)
                     val imageFill = engine.block.createFill(FillType.Image)
-                    engine.block.setUri(imageFill, "fill/image/imageFileURI", url)
-                    engine.block.setFill(graphicBlock, imageFill)
-                    engine.block.setShape(graphicBlock, engine.block.createShape(ShapeType.Rect))
-                    engine.block.setWidth(graphicBlock, engine.block.getWidth(newPage))
-                    engine.block.setHeight(graphicBlock, engine.block.getHeight(newPage))
-                    engine.block.appendChild(newPage, graphicBlock)
+                    engine.block.apply {
+                        setUri(imageFill, "fill/image/imageFileURI", uri)
+                        setFill(graphicBlock, imageFill)
+                        setShape(graphicBlock, engine.block.createShape(ShapeType.Rect))
+                        setWidth(graphicBlock, engine.block.getWidth(targetPage))
+                        setHeight(graphicBlock, engine.block.getHeight(targetPage))
+                        appendChild(targetPage, graphicBlock)
+                    }
                 }
             } catch (e: Exception) {
                 println("Error adding new page: ${e.localizedMessage}")
             }
         }
 
-        for (url in photosData.drop(1)) {
-            addPageWithImage(url)
+        photosData.forEachIndexed { index, uri ->
+            addPageWithImage(uri, index == 0)
         }
 
         for (graphicBlock in engine.block.findByType(DesignBlockType.Graphic)) {
             engine.block.setContentFillMode(graphicBlock, ContentFillMode.CONTAIN)
-        }
-
-        withContext(Dispatchers.Main) {
-            engine.addDefaultAssetSources()
-            engine.addDemoAssetSources(
-                sceneMode = engine.scene.getMode(),
-                withUploadAssetSources = true
-            )
-            TypefaceProvider().provideTypeface(engine, DefaultAssetSource.TYPEFACE.name)?.let {
-                engine.asset.addSource(
-                    TextAssetSource(
-                        engine = engine,
-                        typeface = it
-                    )
-                )
-            }
         }
     }
 
