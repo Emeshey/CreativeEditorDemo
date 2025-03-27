@@ -1,8 +1,10 @@
 package com.media.nyzzu
 
+import android.content.Context
 import android.net.Uri
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.FileProvider
 import com.media.nyzzu.databinding.ActivityEditorBinding
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -17,7 +19,10 @@ import ly.img.engine.ContentFillMode
 import ly.img.engine.DesignBlockType
 import ly.img.engine.Engine
 import ly.img.engine.FillType
+import ly.img.engine.MimeType
 import ly.img.engine.ShapeType
+import java.io.File
+import java.nio.ByteBuffer
 
 class EditorActivity : AppCompatActivity() {
 
@@ -57,6 +62,9 @@ class EditorActivity : AppCompatActivity() {
                             this.editorContext.eventHandler
                         )
                     },
+                    onExport = {
+                        saveData(export(this.editorContext.engine))
+                    }
                 )
             val editorConfiguration = EditorConfiguration.rememberForDesign()
             DesignEditor(
@@ -121,6 +129,41 @@ class EditorActivity : AppCompatActivity() {
 
         for (graphicBlock in engine.block.findByType(DesignBlockType.Graphic)) {
             engine.block.setContentFillMode(graphicBlock, ContentFillMode.CONTAIN)
+        }
+    }
+
+    private suspend fun export(engine: Engine): List<ByteBuffer> {
+        val pages = engine.scene.getPages()
+        val exportedMedias = mutableListOf<ByteBuffer>()
+
+        for (page in pages) {
+            val imageData = withContext(Dispatchers.Main) {
+                engine.block.export(block = page, mimeType = MimeType.JPEG)
+            }
+            exportedMedias.add(imageData)
+        }
+
+        return exportedMedias
+    }
+
+    private fun saveData(byteBuffers: List<ByteBuffer>) {
+        val byteArrays = byteBuffers.map { byteBuffer ->
+            ByteArray(byteBuffer.remaining()).apply { byteBuffer.get(this) }
+        } as ArrayList<ByteArray>
+        byteArrays
+            .take(10)
+            .map { saveImageToCache(this, it).toString() }
+            .toTypedArray()
+    }
+
+    private fun saveImageToCache(context: Context, byteArray: ByteArray): Uri? {
+        return try {
+            val file = File(context.cacheDir, "my_image${System.currentTimeMillis()}.jpg")
+            file.outputStream().use { it.write(byteArray) }
+            FileProvider.getUriForFile(context, "${context.packageName}.customFileProvider", file)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
         }
     }
 
