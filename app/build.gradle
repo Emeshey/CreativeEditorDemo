@@ -1,6 +1,7 @@
 apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
 apply plugin: 'ly.img.android.sdk'
+apply plugin: "androidx.navigation.safeargs.kotlin"
 
 android {
     namespace 'com.media.nyzzu'
@@ -68,11 +69,15 @@ dependencies {
     implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.6.1'
     implementation 'androidx.activity:activity-ktx:1.7.2'
 
+
+    implementation 'androidx.navigation:navigation-fragment-ktx:2.7.7'
+    implementation 'androidx.navigation:navigation-ui-ktx:2.7.7'
+    implementation 'androidx.viewpager2:viewpager2:1.0.0'
     // Image loading
     implementation 'com.github.bumptech.glide:glide:4.15.1'
 
     // Permission handling
     implementation 'com.karumi:dexter:6.2.3'
 
-    implementation "ly.img:editor:1.45.0"
+    implementation "ly.img:editor:1.48.0"
 }

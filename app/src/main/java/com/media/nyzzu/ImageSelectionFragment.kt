@@ -1,37 +1,49 @@
 package com.media.nyzzu
 
-import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.provider.MediaStore
+import android.util.Log
+import android.view.LayoutInflater
 import android.view.View
+import android.view.ViewGroup
 import android.widget.Toast
-import androidx.appcompat.app.AppCompatActivity
+import androidx.core.os.bundleOf
+import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
+import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.GridLayoutManager
 import com.example.imageeditor.ImageAdapter
-import com.media.nyzzu.databinding.ActivityImageSelectionBinding
+import com.media.nyzzu.databinding.FragmentImageSelectionBinding
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-class ImageSelectionActivity : AppCompatActivity() {
+class ImageSelectionFragment : Fragment() {
 
-    private lateinit var binding: ActivityImageSelectionBinding
+    private lateinit var binding: FragmentImageSelectionBinding
     private lateinit var adapter: ImageAdapter
-    private val selectedImages = mutableListOf<Uri>()
+    private val selectedImages = mutableListOf<String>()
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        binding = ActivityImageSelectionBinding.inflate(layoutInflater)
-        setContentView(binding.root)
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
+        binding = FragmentImageSelectionBinding.inflate(inflater, container, false)
+        return binding.root
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
 
         setupRecyclerView()
         loadImages()
 
         binding.continueButton.setOnClickListener {
             if (selectedImages.isEmpty()) {
-                Toast.makeText(this, R.string.select_at_least_one, Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), R.string.select_at_least_one, Toast.LENGTH_SHORT)
+                    .show()
             } else {
                 navigateToEditor()
             }
@@ -41,14 +53,16 @@ class ImageSelectionActivity : AppCompatActivity() {
     private fun setupRecyclerView() {
         adapter = ImageAdapter { uri, isSelected ->
             if (isSelected) {
-                selectedImages.add(uri)
+                if (!selectedImages.contains(uri.toString())) {
+                    selectedImages.add(uri.toString())
+                }
             } else {
-                selectedImages.remove(uri)
+                selectedImages.remove(uri.toString())
             }
             updateContinueButtonState()
         }
 
-        binding.imagesRecyclerView.layoutManager = GridLayoutManager(this, 3)
+        binding.imagesRecyclerView.layoutManager = GridLayoutManager(requireContext(), 3)
         binding.imagesRecyclerView.adapter = adapter
     }
 
@@ -82,7 +96,7 @@ class ImageSelectionActivity : AppCompatActivity() {
 
         val sortOrder = "${MediaStore.Images.Media.DATE_ADDED} DESC"
 
-        contentResolver.query(
+        requireActivity().contentResolver.query(
             MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
             projection,
             null,
@@ -90,7 +104,7 @@ class ImageSelectionActivity : AppCompatActivity() {
             sortOrder
         )?.use { cursor ->
             val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media._ID)
-            
+
             while (cursor.moveToNext()) {
                 val id = cursor.getLong(idColumn)
                 val contentUri = Uri.withAppendedPath(
@@ -105,13 +119,12 @@ class ImageSelectionActivity : AppCompatActivity() {
     }
 
     private fun navigateToEditor() {
-        val intent = Intent(this, EditorActivity::class.java).apply {
-            putParcelableArrayListExtra(EXTRA_SELECTED_IMAGES, ArrayList(selectedImages))
-        }
-        startActivity(intent)
-    }
-
-    companion object {
-        const val EXTRA_SELECTED_IMAGES = "extra_selected_images"
+        findNavController().navigate(
+            R.id.editorPreviewFragment,
+            bundleOf(
+                URI to selectedImages.toTypedArray(),
+                INDEX to 0
+            )
+        )
     }
 }

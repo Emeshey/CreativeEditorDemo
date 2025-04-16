@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/imageSelectionFragment">
+
+    <fragment
+        android:id="@+id/imageSelectionFragment"
+        android:name="com.media.nyzzu.ImageSelectionFragment"
+        android:label="ImageSelectionFragment"
+        tools:layout="@layout/fragment_image_selection" />
+
+    <fragment
+        android:id="@+id/editorPreviewFragment"
+        android:name="com.media.nyzzu.EditorPreviewFragment"
+        android:label="EditorPreviewFragment"
+        tools:layout="@layout/fragment_gallery">
+        <argument
+            android:name="index"
+            app:argType="integer" />
+
+        <argument
+            android:name="uri"
+            app:argType="string[]"
+            app:nullable="false" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/editorFragment"
+        android:name="com.media.nyzzu.EditorFragment"
+        android:label="EditorFragment">
+        <argument
+            android:name="index"
+            app:argType="integer" />
+
+        <argument
+            android:name="uri"
+            app:argType="string[]"
+            app:nullable="false" />
+    </fragment>
+</navigation>

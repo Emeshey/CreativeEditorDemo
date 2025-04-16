@@ -53,7 +53,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun navigateToImageSelection() {
-        val intent = Intent(this, ImageSelectionActivity::class.java)
+        val intent = Intent(this, EditorActivity::class.java)
         startActivity(intent)
     }
 }

@@ -28,18 +28,21 @@
         </activity>
 
         <activity
-            android:name=".ImageSelectionActivity"
-            android:exported="true"
-            android:label="@string/app_name"
-            android:theme="@style/Theme.CreativeEditorDemo">
-        </activity>
-
-        <activity
             android:name=".EditorActivity"
             android:exported="true"
             android:label="@string/app_name"
             android:theme="@style/Theme.CreativeEditorDemo">
         </activity>
+
+        <provider
+            android:name="com.media.nyzzu.CustomFileProvider"
+            android:authorities="${applicationId}.customFileProvider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_provider_paths" />
+        </provider>
     </application>
 
 </manifest>
