@@ -41,7 +41,7 @@ class EditorFragment : Fragment() {
             setContent {
                 val engineConfiguration =
                     EngineConfiguration.Companion.remember(
-                        license = "mde_SFWnN001U-O0bJpmrJvo1FD_g28G2W-J8Qe4rtddktTWWrUSr7IXcXH_OgyA",
+                        license = "your_license_key",
                         onCreate = {
                             EditorDefaults.onCreateFromImage(
                                 engine = this.editorContext.engine,
